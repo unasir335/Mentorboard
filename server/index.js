@@ -1,7 +1,7 @@
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 8080 });
 
-// Store connected clients
+// clients/all connected users
 const clients = new Set();
 
 wss.on('connection', (ws) => {
