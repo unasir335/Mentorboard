@@ -50,9 +50,9 @@ function Dashboard({ user, tutors, calendarEvents }) {
   useEffect(() => {
     // Option 1: Just take the first 3 tutors if more than 3 are are available
     setRecentTutors(tutors.slice(0, 3));
-    
+  }, [tutors]); // Only rerun if tutors array changes
   
-  // Fupcoming events
+  // For upcoming events
   useEffect(() => {
     if (calendarEvents && calendarEvents.length > 0) {
       const upcoming = calendarEvents
@@ -276,7 +276,7 @@ function Dashboard({ user, tutors, calendarEvents }) {
                   <Box>
                     <Typography variant="h6" fontWeight="bold">Chat Room</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Chat with tutors and students
+                      Tutoring Assistance 
                     </Typography>
                   </Box>
                 </Box>
@@ -288,7 +288,7 @@ function Dashboard({ user, tutors, calendarEvents }) {
                   alignItems: 'center'
                 }}>
                   <Typography variant="body2" color="text.secondary">
-                    Real-time messaging
+                    Converse with Tutors and Students
                   </Typography>
                 </CardContent>
               </CardActionArea>

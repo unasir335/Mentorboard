@@ -30,9 +30,46 @@ export const mockTutors = [
     interests: ["Astronomy", "Philosophy"],
     contact: "Sagan@example.com",
     reviews: ["Highly recommended!"],
-    rating: 4.7,
+    rating: 4.0,
     classes: ["Aerospace Engineering", "Physics"],
     profileImage: "/images/carl_sagan.jpg",
     fallbackImage: "https://source.unsplash.com/random/350x200/?professor,cosmos"
   },
+  {
+    id: 4,
+    name: "Brian Cox",
+    bio: "Physicist",
+    interests: ["Physics", "Astronomy"],
+    contact: "BCox@example.com",
+    reviews: ["Amazing educator and speaker!"],
+    rating: 5.0,
+    classes: ["Chemistry", "Physics", 'Calculus101'],
+    profileImage: "/images/BrianCox.jpg",
+    fallbackImage: "https://source.unsplash.com/random/350x200/?professor,cosmos"
+  },
+  {
+    id: 5,
+    name: "Michi Kaku",
+    bio: "Physicist and Futurist",
+    interests: ["Physics", "Astronomy"],
+    contact: "MKaku@example.com",
+    reviews: ["Prize-winning physicist and professor!"],
+    rating: 3.6,
+    classes: ["Chemistry", "Physics", 'Calculus101'],
+    profileImage: "/images/MKaku.jpg",
+    fallbackImage: "https://source.unsplash.com/random/350x200/?professor,cosmos"
+  },
+  {
+    id: 6,
+    name: "Salman Khan",
+    bio: "Math and Science Educator",
+    interests: ["Physics", "Astronomy"],
+    contact: "SKhan@example.com",
+    reviews: ["Renowned Tutor and educator!"],
+    rating: 4.8,
+    classes: ["Biology", "Chemistry", 'Calculus101'],
+    profileImage: "/images/SalK.jpg",
+    fallbackImage: "https://source.unsplash.com/random/350x200/?professor,cosmos"
+  },
+  
 ];

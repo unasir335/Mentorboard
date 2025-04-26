@@ -100,14 +100,12 @@ function App() {
     }
   }, [user]);
   
-  // Save calendar events to localStorage when they change
   useEffect(() => {
     if (calendarEvents.length > 0) {
       localStorage.setItem("calendarEvents", JSON.stringify(calendarEvents));
     }
   }, [calendarEvents]);
   
-  // Protected route component
   const ProtectedRoute = ({ children }) => {
     if (!user) {
       return <Navigate to="/login" />;

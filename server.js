@@ -132,7 +132,7 @@ wss.on('connection', (ws, req) => {
             // Send welcome message to the user who joined
             const welcomeMessage = {
               type: 'system',
-              text: `Welcome, ${message.userId}! You are now connected to the chat.`,
+              text: `Welcome! You are now connected to the chat.`,
               userId: 'System',
               timestamp: new Date().toISOString()
             };

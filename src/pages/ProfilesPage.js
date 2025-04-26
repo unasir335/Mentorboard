@@ -63,9 +63,9 @@ function ProfilesPage({ tutors }) {
     return matchesSearch;
   });
 
-  // Get profile image, with fallbacks
+  // Get profile image, with fallbacks ---> default image
   const getProfileImage = (tutor) => {
-    // Try to load the profile image
+    //  load the profile image
     if (tutor.profileImage) {
       return tutor.profileImage;
     } 
@@ -73,7 +73,7 @@ function ProfilesPage({ tutors }) {
     else if (tutor.fallbackImage) {
       return tutor.fallbackImage;
     }
-    // Last resort: use a placeholder
+    // default image set
     return `/api/placeholder/350/200?text=${tutor.name.replace(' ', '+')}`;
   };
 

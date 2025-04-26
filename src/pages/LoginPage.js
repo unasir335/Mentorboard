@@ -23,7 +23,7 @@ function LoginPage({ setUser }) {
       return;
     }
     
-    // Mock login - in real app, this would be an API call
+    //mockUser login - no stored information yet
     setUser({ email, userType: "Student" });
     navigate("/dashboard");
   };
