@@ -1,6 +1,8 @@
-# Getting Started with Create React App
+# Running MentorBoard web application
 
-## Available Scripts
+## Steps to run server and separate but persistent clients (based on PORT)
+
+Please follow the steps in order:
 
 In the project directory, you can run:
 ### `npm install`
@@ -10,7 +12,7 @@ Installs all dependencies from package.json - make sure you are cd into root of 
 ### `npm run server`
 
 Runs the server.
-On [http://localhost:8000](http://localhost:8000).
+On [http://localhost:8080](http://localhost:8080).
 
 
 ### `npm start` (Please do this on a separate terminal instance)
