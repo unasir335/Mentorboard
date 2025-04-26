@@ -17,7 +17,7 @@ import ChatPage from "./pages/ChatPage";
 // Import mock data
 import { mockTutors } from "./data/mockData";
 
-// Create theme
+// theme for application - set global css styles and colors for dashboard
 const theme = createTheme({
   palette: {
     primary: {

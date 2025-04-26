@@ -3,7 +3,7 @@ const http = require('http');
 const express = require('express');
 const cors = require('cors');
 
-// Create an Express app
+// Create an Express app ---> initialize app variable
 const app = express();
 app.use(cors());
 
@@ -19,23 +19,23 @@ const clients = new Map();
 // Function to generate a user ID from email
 const getUserId = (email) => {
   if (!email) return "U";
-  // Get first letter of each part of the email before the @ symbol
+  
   const parts = email.split('@')[0].split(/[._-]/);
   return parts.map(part => part[0].toUpperCase()).join('');
 };
 
-// Function to broadcast to all clients
-const broadcast = (data) => {
+// ensure all clients recieve socket output except the sender
+const broadcast = (data, excludeClientId = null) => {
   const message = typeof data === 'string' ? data : JSON.stringify(data);
   
-  clients.forEach((client) => {
-    if (client.ws.readyState === WebSocket.OPEN) {
+  clients.forEach((client, id) => {
+    if (id !== excludeClientId && client.ws.readyState === WebSocket.OPEN) {
       client.ws.send(message);
     }
   });
 };
 
-// Function to send message to a specific user
+// send message to a specific user
 const sendTo = (recipientEmail, data) => {
   const message = typeof data === 'string' ? data : JSON.stringify(data);
   
@@ -46,18 +46,22 @@ const sendTo = (recipientEmail, data) => {
   });
 };
 
-// Get all active users
+// Get all active users (deduplicated by email)
 const getActiveUsers = () => {
-  const users = [];
+  const usersMap = new Map(); // Use a Map to deduplicate by email
+  
   clients.forEach((client) => {
     if (client.userId && client.email) {
-      users.push({
+      // Only add this user if not already in our map
+      usersMap.set(client.email, {
         userId: client.userId,
         email: client.email
       });
     }
   });
-  return users;
+  
+  // Convert map values to array
+  return Array.from(usersMap.values());
 };
 
 // Send updated user list to all clients
@@ -89,7 +93,7 @@ wss.on('connection', (ws, req) => {
       const message = JSON.parse(messageStr);
       console.log('Received:', message);
       
-      // Add server timestamp if not provided
+    
       if (!message.timestamp) {
         message.timestamp = new Date().toISOString();
       }
@@ -99,17 +103,31 @@ wss.on('connection', (ws, req) => {
         case 'join':
           // User joined the chat
           if (message.userId && message.email) {
+            // First check if this user (by email) is already in any connection
+            let userAlreadyExists = false;
+            clients.forEach((existingClient) => {
+              if (existingClient.email === message.email && existingClient.userId === message.userId) {
+                userAlreadyExists = true;
+              }
+            });
+            
+            // Update client infor
             clients.set(clientId, { 
               ws, 
               userId: message.userId,
               email: message.email
             });
             
-            // Add user list to the join message
-            message.users = getActiveUsers();
             
-            // Broadcast join message to everyone
-            broadcast(message);
+            if (!userAlreadyExists) {
+              // Add user list to the join message
+              message.users = getActiveUsers();
+              
+              broadcast(message);
+            } else {
+              
+              broadcastUserList();
+            }
             
             // Send welcome message to the user who joined
             const welcomeMessage = {
@@ -119,41 +137,47 @@ wss.on('connection', (ws, req) => {
               timestamp: new Date().toISOString()
             };
             ws.send(JSON.stringify(welcomeMessage));
+            
+            // get current list of users from active PORTS --> used by all clients
+            broadcastUserList();
           }
           break;
           
         case 'leave':
-          // User explicitly left the chat (page closed, etc.)
+          // User left chat
           if (clients.has(clientId)) {
             clients.delete(clientId);
           }
           
-          // Add user list to the leave message
-          message.users = getActiveUsers();
+          broadcastUserList();
           
-          // Broadcast leave message
+          // show leave message
           broadcast(message);
           break;
           
         case 'chat':
+          // Add a message ID to help clients detect duplicates
+          message.messageId = `${message.userId}-${message.timestamp}-${Math.random().toString(36).substring(2, 10)}`;
+          
           // Regular chat message
           if (message.recipient && message.recipientEmail) {
             // Direct message to specific user
             sendTo(message.recipientEmail, message);
             
-            // Also send to the sender (so they see their own message)
+            // show client their own messages
             if (message.email && message.email !== message.recipientEmail) {
               sendTo(message.email, message);
             }
           } else {
-            // Broadcast to everyone
-            broadcast(message);
+            
+            ws.send(JSON.stringify(message));
+            broadcast(message, clientId);
           }
           break;
           
         default:
-          // Fallback for other message types
-          broadcast(message);
+          ws.send(JSON.stringify(message));
+          broadcast(message, clientId);
       }
     } catch (error) {
       console.error('Error processing message:', error);
@@ -164,43 +188,47 @@ wss.on('connection', (ws, req) => {
   ws.on('close', () => {
     console.log('Client disconnected');
     
-    // Get user info before removing
     const client = clients.get(clientId);
     const userId = client?.userId;
     const email = client?.email;
     
-    // Remove client from our map
+    // Remove client based on client (PORT), userId, and email
     if (clients.has(clientId)) {
       clients.delete(clientId);
     }
+    //boolean if user is still connected
+    let userStillConnected = false;
+    if (email) {
+      clients.forEach((client) => {
+        if (client.email === email) {
+          userStillConnected = true;
+        }
+      });
+    }
     
-    // Send leave message if we had user info
-    if (userId && email) {
+    if (!userStillConnected && userId && email) {
       const leaveMessage = {
         type: 'leave',
         userId,
         email,
-        users: getActiveUsers(),
         timestamp: new Date().toISOString()
       };
       broadcast(leaveMessage);
     }
-  });
-  
-  // Handle errors
-  ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-    
-    // Remove client on error
-    if (clients.has(clientId)) {
-      clients.delete(clientId);
-    }
-    
-    // Update user list for others
     broadcastUserList();
   });
   
-  // Send the current user list to the new client
+  //  error handling if client disconnects
+  ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+    
+    if (clients.has(clientId)) {
+      clients.delete(clientId);
+    }
+
+    broadcastUserList();
+  });
+  
   setTimeout(() => {
     const userList = {
       type: 'userList',
@@ -211,11 +239,12 @@ wss.on('connection', (ws, req) => {
   }, 1000);
 });
 
-// Simple API endpoint to check if server is running
+// check if server is running and get active users
 app.get('/api/status', (req, res) => {
   res.json({
     status: 'online',
     connections: clients.size,
+    activeUsers: getActiveUsers().length,
     timestamp: new Date().toISOString()
   });
 });

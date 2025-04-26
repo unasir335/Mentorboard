@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Calendar, dateFnsLocalizer } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {
@@ -28,7 +28,6 @@ import {
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
-  Edit as EditIcon,
   Event as EventIcon,
   Close as CloseIcon,
   School as SchoolIcon
@@ -52,7 +51,7 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
-// Available event labels/categories
+// Available event labels/categories for appointment types
 const eventCategories = [
   { name: "Tutoring", color: "#2196f3" },
   { name: "Study Group", color: "#4caf50" },
@@ -64,7 +63,7 @@ const eventCategories = [
 function CalendarPage({ calendarEvents, setCalendarEvents, tutors, user }) {
   const [openEventDialog, setOpenEventDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [formMode, setFormMode] = useState('create'); // 'create', 'edit'
+  const [formMode, setFormMode] = useState('create'); // create and edit appointments on calendar
   const [eventForm, setEventForm] = useState({
     title: '',
     start: new Date(),
@@ -83,31 +82,9 @@ function CalendarPage({ calendarEvents, setCalendarEvents, tutors, user }) {
   
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // Check URL for event ID parameter
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const eventId = params.get('event');
-    
-    if (eventId && calendarEvents) {
-      const event = calendarEvents.find(e => e.id === eventId);
-      if (event) {
-        handleSelectEvent(event);
-      }
-    }
-  }, [location, calendarEvents]);
-  
-  // Reset form when dialog opens/closes
-  useEffect(() => {
-    if (!openEventDialog) {
-      setTimeout(() => {
-        setSelectedEvent(null);
-        resetForm();
-      }, 300);
-    }
-  }, [openEventDialog]);
-  
-  const resetForm = () => {
+
+  // set event on calendar form when creating new appointment - setEventForm
+  const resetForm = useCallback(() => {
     setEventForm({
       title: '',
       start: new Date(),
@@ -117,21 +94,10 @@ function CalendarPage({ calendarEvents, setCalendarEvents, tutors, user }) {
       tutorId: '',
       createdBy: user.email
     });
-  };
+  }, [user.email]);
   
-  // Event handlers
-  const handleSelectSlot = ({ start, end }) => {
-    setFormMode('create');
-    setEventForm({
-      ...eventForm,
-      start: start,
-      end: end,
-      createdBy: user.email
-    });
-    setOpenEventDialog(true);
-  };
-  
-  const handleSelectEvent = (event) => {
+  // function to set values initialized in resetForm
+  const handleSelectEvent = useCallback((event) => {
     setSelectedEvent(event);
     setFormMode('edit');
     setEventForm({
@@ -144,8 +110,43 @@ function CalendarPage({ calendarEvents, setCalendarEvents, tutors, user }) {
       createdBy: event.createdBy || user.email
     });
     setOpenEventDialog(true);
-  };
+  }, [user.email]);
   
+  
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const eventId = params.get('event');
+    
+    if (eventId && calendarEvents) {
+      const event = calendarEvents.find(e => e.id === eventId);
+      if (event) {
+        handleSelectEvent(event);
+      }
+    }
+  }, [location, calendarEvents, handleSelectEvent]);
+  
+  // Reset form when dialog opens/closes
+  useEffect(() => {
+    if (!openEventDialog) {
+      setTimeout(() => {
+        setSelectedEvent(null);
+        resetForm();
+      }, 300);
+    }
+  }, [openEventDialog, resetForm]);
+  
+  // Event handlers for form creation
+  const handleSelectSlot = ({ start, end }) => {
+    setFormMode('create');
+    setEventForm({
+      ...eventForm,
+      start: start,
+      end: end,
+      createdBy: user.email
+    });
+    setOpenEventDialog(true);
+  };
+  //error handling for calendar events
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setEventForm({
@@ -270,7 +271,7 @@ function CalendarPage({ calendarEvents, setCalendarEvents, tutors, user }) {
     });
   };
   
-  // Custom event styling
+  // event styling CSS
   const eventStyleGetter = (event) => {
     const style = {
       backgroundColor: event.backgroundColor || eventCategories[0].color,
@@ -285,7 +286,7 @@ function CalendarPage({ calendarEvents, setCalendarEvents, tutors, user }) {
       style
     };
   };
-  
+  //HTML for calendar page
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Container maxWidth="lg">

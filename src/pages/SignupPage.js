@@ -32,9 +32,9 @@ function SignupPage({ setUser }) {
       [name]: value,
     }));
   };
-
+//mock module since there is no database or json/api to retain set user values - using port to retain data via localstorage instead
   const handleSignup = () => {
-    // Basic validation
+    //  validation for user data ---> email, password and confirm password
     if (!formData.email || !formData.password || !formData.confirmPassword) {
       setError("Please fill in all fields");
       return;
@@ -50,7 +50,7 @@ function SignupPage({ setUser }) {
       return;
     }
 
-    // Mock signup - in real app, this would be an API call
+    //set user with input data
     setUser({ email: formData.email, userType: formData.userType });
     navigate("/dashboard");
   };

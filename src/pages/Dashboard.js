@@ -7,7 +7,6 @@ import {
   Paper,
   Card,
   CardContent,
-  CardMedia,
   CardActionArea,
   IconButton,
   Avatar,
@@ -16,7 +15,6 @@ import {
   ListItem,
   ListItemAvatar,
   ListItemText,
-  ListItemSecondaryAction,
   Button,
   Chip,
   Stack,
@@ -32,7 +30,7 @@ import {
   Notifications as NotificationsIcon
 } from "@mui/icons-material";
 
-// Utility function to get today's date in a nice format
+// reformat today's current date
 const formatDate = (date) => {
   return new Intl.DateTimeFormat('en-US', {
     weekday: 'long',
@@ -42,24 +40,20 @@ const formatDate = (date) => {
   }).format(date);
 };
 
-// Get user initial
-const getUserInitial = (email) => {
-  if (!email) return "U";
-  return email.charAt(0).toUpperCase();
-};
-
 function Dashboard({ user, tutors, calendarEvents }) {
   const theme = useTheme();
   const today = new Date();
   const [recentTutors, setRecentTutors] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   
+  // useEffect to set recent tutors
   useEffect(() => {
-    // Get 3 random tutors for demonstration
-    const randomTutors = [...tutors].sort(() => 0.5 - Math.random()).slice(0, 3);
-    setRecentTutors(randomTutors);
+    // Option 1: Just take the first 3 tutors if more than 3 are are available
+    setRecentTutors(tutors.slice(0, 3));
     
-    // Filter calendar events for upcoming ones
+  
+  // Fupcoming events
+  useEffect(() => {
     if (calendarEvents && calendarEvents.length > 0) {
       const upcoming = calendarEvents
         .filter(event => new Date(event.start) > today)
@@ -67,7 +61,7 @@ function Dashboard({ user, tutors, calendarEvents }) {
         .slice(0, 3);
       setUpcomingEvents(upcoming);
     }
-  }, [tutors, calendarEvents]);
+  }, [calendarEvents, today]);
   
   return (
     <Container maxWidth="lg">
@@ -129,13 +123,24 @@ function Dashboard({ user, tutors, calendarEvents }) {
               sx={{ 
                 borderRadius: 2,
                 height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
                 transition: 'transform 0.2s',
                 '&:hover': {
                   transform: 'translateY(-5px)'
                 }
               }}
             >
-              <CardActionArea component={Link} to="/calendar" sx={{ height: '100%' }}>
+              <CardActionArea 
+                component={Link} 
+                to="/calendar" 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'stretch'
+                }}
+              >
                 <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
                   <Avatar
                     variant="rounded"
@@ -156,7 +161,12 @@ function Dashboard({ user, tutors, calendarEvents }) {
                   </Box>
                 </Box>
                 <Divider />
-                <CardContent sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                <CardContent sx={{ 
+                  bgcolor: 'rgba(0,0,0,0.02)',
+                  flexGrow: 1,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
                   <Typography variant="body2" color="text.secondary">
                     {upcomingEvents.length > 0 
                       ? `${upcomingEvents.length} upcoming appointments` 
@@ -174,13 +184,24 @@ function Dashboard({ user, tutors, calendarEvents }) {
               sx={{ 
                 borderRadius: 2,
                 height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
                 transition: 'transform 0.2s',
                 '&:hover': {
                   transform: 'translateY(-5px)'
                 }
               }}
             >
-              <CardActionArea component={Link} to="/profiles" sx={{ height: '100%' }}>
+              <CardActionArea 
+                component={Link} 
+                to="/profiles" 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'stretch'
+                }}
+              >
                 <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
                   <Avatar
                     variant="rounded"
@@ -201,7 +222,12 @@ function Dashboard({ user, tutors, calendarEvents }) {
                   </Box>
                 </Box>
                 <Divider />
-                <CardContent sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                <CardContent sx={{ 
+                  bgcolor: 'rgba(0,0,0,0.02)',
+                  flexGrow: 1,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
                   <Typography variant="body2" color="text.secondary">
                     {tutors.length} tutors available
                   </Typography>
@@ -217,13 +243,24 @@ function Dashboard({ user, tutors, calendarEvents }) {
               sx={{ 
                 borderRadius: 2,
                 height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
                 transition: 'transform 0.2s',
                 '&:hover': {
                   transform: 'translateY(-5px)'
                 }
               }}
             >
-              <CardActionArea component={Link} to="/chat" sx={{ height: '100%' }}>
+              <CardActionArea 
+                component={Link} 
+                to="/chat" 
+                sx={{ 
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'stretch'
+                }}
+              >
                 <Box sx={{ p: 2, display: 'flex', alignItems: 'center' }}>
                   <Avatar
                     variant="rounded"
@@ -244,7 +281,12 @@ function Dashboard({ user, tutors, calendarEvents }) {
                   </Box>
                 </Box>
                 <Divider />
-                <CardContent sx={{ bgcolor: 'rgba(0,0,0,0.02)' }}>
+                <CardContent sx={{ 
+                  bgcolor: 'rgba(0,0,0,0.02)',
+                  flexGrow: 1,
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
                   <Typography variant="body2" color="text.secondary">
                     Real-time messaging
                   </Typography>

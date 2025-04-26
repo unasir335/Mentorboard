@@ -18,15 +18,7 @@ import {
   useTheme,
   Snackbar,
   Alert,
-  Card,
-  CardContent,
   CircularProgress,
-  Menu,
-  MenuItem,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Tab,
   Tabs
 } from '@mui/material';
@@ -36,19 +28,17 @@ import {
   Info as InfoIcon,
   Image as ImageIcon,
   EmojiEmotions as EmojiIcon,
-  Close as CloseIcon,
   PersonAdd as PersonAddIcon,
-  Search as SearchIcon,
   ArrowBack as ArrowBackIcon,
   VideocamOutlined as VideocamIcon,
   PhoneOutlined as PhoneIcon,
-  Chat as ChatIcon,  // Add this line
+  Chat as ChatIcon,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // Service URL based on the current PORT
 const getWebSocketUrl = () => {
-  // In development, use port 8080 for WebSocket
+  // using ort 8080 for WebSocket
   const wsPort = 8080;
   const wsHost = window.location.hostname;
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -57,12 +47,12 @@ const getWebSocketUrl = () => {
   return `${wsProtocol}//${wsHost}:${wsPort}`;
 };
 
-// Generate consistent avatar color based on user ID
+// avatar circle generation populated with user ID
 const getAvatarColor = (userId, theme) => {
   if (!userId) return theme.palette.grey[500];
   if (userId === "System") return theme.palette.grey[500];
   
-  // Generate a color based on string hash
+  // Generate random color for each user ---> hash userID string
   const hash = userId.split('').reduce((acc, char) => {
     return char.charCodeAt(0) + ((acc << 5) - acc);
   }, 0);
@@ -156,15 +146,17 @@ function ChatPage({ user, tutors }) {
         
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
+          console.log('Received message:', data);
           
           // Handle different message types
           switch (data.type) {
             case 'userList':
-              // Update active users list
+              
               setActiveUsers(data.users || []);
               break;
+              
             case 'join':
-              // Someone joined, show notification and update user list
+              // if new user has joined chat, then show notification
               if (data.userId !== getUserId(user.email)) {
                 setSnackbar({
                   open: true,
@@ -172,29 +164,68 @@ function ChatPage({ user, tutors }) {
                   severity: 'info'
                 });
               }
-              // If userList is provided, update our list
+              // set user list with active users if not already present
               if (data.users) {
                 setActiveUsers(data.users);
               }
               break;
+              
             case 'leave':
-              // Someone left, update user list
+              // inform that another user has left the chat
               if (data.users) {
                 setActiveUsers(data.users);
               }
               break;
+              
             case 'chat':
-              // Regular chat message
-              setMessages(prevMessages => [...prevMessages, data]);
+              // post chat message
+              setMessages(prevMessages => {
+                
+                const msgId = data.messageId || `${data.userId}-${data.timestamp}`;
+                
+              
+                const isDuplicate = prevMessages.some(msg => {
+                  const existingMsgId = msg.messageId || `${msg.userId}-${msg.timestamp}`;
+                  return existingMsgId === msgId;
+                });
+                
+                if (isDuplicate) {
+                  return prevMessages; // Don't add duplicate messages if boolean is true after checking previous messages
+                }
+                return [...prevMessages, data]; // Add new message
+              });
               break;
+              
             case 'system':
-              // System message
-              setMessages(prevMessages => [...prevMessages, {...data, system: true}]);
+              //check for duplicates for system type messages ---> snackbar notifications
+              setMessages(prevMessages => {
+                const msgId = `${data.userId}-${data.timestamp}`;
+                const isDuplicate = prevMessages.some(msg => 
+                  `${msg.userId}-${msg.timestamp}` === msgId
+                );
+                
+                if (isDuplicate) {
+                  return prevMessages;
+                }
+                return [...prevMessages, {...data, system: true}];
+              });
               break;
+              
             default:
-              // Fallback for other message types
+              //handle other message types
               if (data.text) {
-                setMessages(prevMessages => [...prevMessages, data]);
+                setMessages(prevMessages => {
+                  // Check for duplicates
+                  const msgId = `${data.userId}-${data.timestamp}`;
+                  const isDuplicate = prevMessages.some(msg => 
+                    `${msg.userId}-${msg.timestamp}` === msgId
+                  );
+                  
+                  if (isDuplicate) {
+                    return prevMessages;
+                  }
+                  return [...prevMessages, data];
+                });
               }
           }
         };
@@ -204,10 +235,10 @@ function ChatPage({ user, tutors }) {
           setConnected(false);
           setConnecting(false);
           
-          if (event.code !== 1000) { // 1000 is normal closure
+          if (event.code !== 1000) { // 1000 second timeout
             setError(`Connection closed unexpectedly. Try refreshing the page.`);
             
-            // Attempt to reconnect after a delay
+            // Attempt to reconnect to socket
             setTimeout(() => {
               initializeSocket();
             }, 5000);
@@ -241,17 +272,16 @@ function ChatPage({ user, tutors }) {
         setError('Failed to initialize chat connection');
         setConnecting(false);
         
-        // After a delay, try to reconnect
         setTimeout(() => {
           initializeSocket();
         }, 5000);
       }
     };
     
-    // Initialize on first load
+    // Initialize on socket when loading chat page first
     initializeSocket();
     
-    // Set initial welcome message
+    // Set initial welcome message using userID and date
     setMessages([
       {
         text: "Welcome to the chat room!",
@@ -282,9 +312,10 @@ function ChatPage({ user, tutors }) {
       userId: getUserId(user.email),
       email: user.email,
       timestamp: new Date().toISOString(),
+      // Add a unique message ID to help prevent duplicates
+      messageId: `${getUserId(user.email)}-${Date.now()}-${Math.random().toString(36).substring(2, 10)}`
     };
     
-    // Add recipient if we're in a direct message
     if (selectedTutor) {
       messageData.recipient = getUserId(selectedTutor.contact);
       messageData.recipientEmail = selectedTutor.contact;
@@ -292,6 +323,7 @@ function ChatPage({ user, tutors }) {
     
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(messageData));
+      // Don't add the message locally - wait for server to send it back
       setNewMessage('');
     } else {
       // Handle case when socket isn't connected
@@ -303,7 +335,7 @@ function ChatPage({ user, tutors }) {
     }
   };
   
-  // Handle tab change (All/Tutors)
+  // (All/Tutors) tab - currently shows no active users
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
   };
@@ -324,13 +356,13 @@ function ChatPage({ user, tutors }) {
   
   // Filter messages for the current view (all or direct message)
   const filteredMessages = selectedTutor
-  ? messages.filter(msg => 
-      msg.system || 
-      (msg.userId === getUserId(user.email) && msg.recipient === getUserId(selectedTutor.contact)) ||
-      (msg.userId === getUserId(selectedTutor.contact) && msg.recipient === getUserId(user.email)) ||
-      (msg.userId === getUserId(selectedTutor.contact) && !msg.recipient)
-    )
-  : messages.filter(msg => !msg.recipient);
+    ? messages.filter(msg => 
+        msg.system || 
+        (msg.userId === getUserId(user.email) && msg.recipient === getUserId(selectedTutor.contact)) ||
+        (msg.userId === getUserId(selectedTutor.contact) && msg.recipient === getUserId(user.email)) ||
+        (msg.userId === getUserId(selectedTutor.contact) && !msg.recipient)
+      )
+    : messages.filter(msg => !msg.recipient);
   
   // Filter active users based on tab selection
   const filteredActiveUsers = tabValue === 0 
@@ -344,8 +376,7 @@ function ChatPage({ user, tutors }) {
   // Get user displayable name
   const getUserDisplayName = (email) => {
     if (!email) return "Unknown";
-    
-    // Check if it's a tutor
+  
     const tutor = tutors.find(t => t.contact === email);
     if (tutor) return tutor.name;
     
@@ -467,7 +498,7 @@ function ChatPage({ user, tutors }) {
           </Grid>
         ) : (
           <>
-            {/* Current Active Users Sidebar - Desktop view */}
+            {/* Current Active Users Sidebar */}
             <Grid item xs={12} md={3} sx={{ display: { xs: 'none', md: 'block' }, height: '100%' }}>
               <Paper elevation={3} sx={{ height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
@@ -642,7 +673,7 @@ function ChatPage({ user, tutors }) {
                   ) : (
                     <List>
                       {filteredMessages.map((message, index) => (
-                        <React.Fragment key={index}>
+                        <React.Fragment key={message.messageId || `${message.userId}-${message.timestamp}-${index}`}>
                           {/* System messages are centered */}
                           {message.system ? (
                             <Box sx={{ textAlign: 'center', my: 2 }}>

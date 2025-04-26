@@ -44,7 +44,7 @@ function ProfilesPage({ tutors }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Filter tutors based on search term and filter
+  // Filter tutors based on search term and subject filter
   const filteredTutors = tutors.filter(tutor => {
     const matchesSearch = 
       tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
